@@ -1,0 +1,390 @@
+---
+title: "power_2"
+author: "Elias"
+date: "May 10, 2018"
+output:
+  pdf_document: default
+  html_document: default
+---
+#Power project
+
+## Here I'll analyse some data from the open powerlifting project.
+* Downloaded data from https://www.openpowerlifting.org/data.html on May 9th, 2018
+* Let's play
+
+```{r}
+library('lme4')
+library(tidyr)
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(gtools)
+library(tinytex)
+
+open<-read.csv("~/power/data/open/openpowerlifting/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE)
+str(open)
+
+```
+* Let's start taking a look at the data.
+    + First I will group people in age groups (3 year groups)
+    + Then subset it into men and women
+
+```{r}
+#assigning age groups
+# group<-seq(from=range(open$Age,na.rm=TRUE)[[1]],
+#            to=range(open$Age,na.rm=TRUE)[[2]],
+#            by=3)
+# 
+# group_range<-c()
+# group2<-c(group-1,100)
+# for(i in 1:length(group)){
+#   if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
+#   next()
+#   }
+#   group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
+# } #making these into ranges rather than just the minimums
+# 
+# open<-cbind(open,Group=NA) #run once
+# #adding a column of ranges
+# for(i in 1:length(open$Age)){
+#   if(is.na(open$Age[i])){next()}
+#   for(j in 1:length(group)){
+#     if(open$Age[i]>=group[j]&&open$Age[i]<=group2[j+1]){
+#     open$Group[i]<-group_range[j]
+#     }
+#   }
+# }
+
+#writing table for future use because the chunk above takes FOREVER
+#write.table(open,"~/power/data/open/openpowerlifting/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
+ord<-mixedorder(open$Group)
+open2<-open[ord,]
+
+open2$Group<-factor(open2$Group,levels=unique(open2$Group))
+
+men<-open2 %>% 
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(Sex=="M") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
+
+women<-open2 %>% 
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(Sex=="F") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
+
+```
+## Age
+
+* Now I'll try to figure out if Age has an effect on performance...and what that effect is
+  + I am starting with male data and then verify trends on females
+  + Purely driven by the fact that there is much more data for men, so the relationships can be seen more clearly
+
+```{r}
+ggplot(men,
+       aes(x=Age,y=TotalKg,color=BodyweightKg)) +
+  geom_point(cex=.7) +
+  facet_wrap(~Equipment) +
+  scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red")
+
+ggplot(women,
+       aes(x=Age,y=TotalKg,color=BodyweightKg)) +
+  geom_point(cex=.7) +
+  facet_wrap(~Equipment) +
+  scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red")
+
+```
+
+
+* There's an obvious peak around age 25, with a slowdown afterwards. What does that mean? We have a ton of data and variability, let's take a look.
+
+* Let's see distribution of data in different ages to see how representative we are and what the resolution is
+
+```{r}
+
+ggplot(men,
+       aes(x=Group,y=TotalKg,fill=Group))+
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE) +
+  facet_wrap(~Equipment) +
+  theme(axis.text.x=element_text(angle=90))
+
+# fit<-aov(TotalKg~Group,data=men)
+line<-lm(TotalKg~Age+BodyweightKg+Equipment,data=men)
+
+# layout(matrix(c(1,2,3,4),2,2))
+# plot(line)
+summary(line)
+
+```
+
+* Let's cull the data to remove people under 22...creates a weird hump that may be obscuring some things
+* Below I only work with data of men above 22 and then I'll check if this is consistent for younger males
+
+```{r}
+men2<-men %>% 
+  filter(Age>22)
+
+ggplot(men2,
+       aes(x=Group,y=TotalKg,fill=Group))+
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE) +
+  facet_wrap(~Equipment) +
+  theme(axis.text.x=element_text(angle=90))
+
+
+line<-lm(TotalKg~Age*BodyweightKg+Equipment,data=men2)
+# layout(matrix(c(1,2,3,4),2,2))
+# plot(wa)
+summary(line)
+```
+
+##Age and Bodyweight seem to have different influences on lifting
+* What's happening here
+  + What you see here is that when we look at Age, it has a negative relationship with Total weight lifted. What does this mean?
+  + One interpretation is that as you get older, it's more difficult to lift heavy weights...duh
+  + Obviously we have a bodyweight disparity here too, where the bigger you are, the more you will lift
+  + An interesting interaction here suggests though, that there is a negative correlation between age and bodyweight, meaning: the older you are, you lose bang for the buck in bodyweight - is this real?
+
+* So far we have been looking at this accross all equipment types, let's break it down and see if these relationships hold among all
+
+
+```{r}
+menm<-men2 %>% 
+  filter(Equipment=="Multi-ply")
+
+menr<-men2 %>% 
+  filter(Equipment=="Raw")
+
+mens<-men2 %>% 
+  filter(Equipment=="Single-ply")
+
+menw<-men2 %>% 
+  filter(Equipment=="Wraps")
+
+mm<-lm(TotalKg~Age*BodyweightKg,data=menm)
+summary(mm)
+
+mr<-lm(TotalKg~Age*BodyweightKg,data=menr)
+summary(mr)
+
+ms<-lm(TotalKg~Age*BodyweightKg,data=mens)
+summary(ms)
+
+mw<-lm(TotalKg~Age*BodyweightKg,data=menw)
+summary(mw)
+```
+
+* So this is __REALLY__ interesting!
+  + What you see here is that there is a small and significant relationship between age and total weight lifted, __but__ the stronger relationship is between bodyweight and total weight lifted
+
+* What does this mean for our interaction and the relationship between Age and Bodyweight?
+  + When looking at Multi-Ply lifters we see that age has a __strong negative__ effect on total weight lifted, bodyweight has a __strong positive__ effect...no interaction though. Meaning you don't lose weight to lifted weight relationship with age.
+  + Raw lifters: __Small__ negative relationship of Age, positive relationship of weight, __small__ but present negative interaction of age and weight (lose bang for buck of gaining weight with age)
+  + Single-ply: __sizeable__ negative relationship of Age, __strong__ positive relationship of weight, __small__ but present negative interaction of age and weight
+  + Wraps: __Large__ negative relationship of Age, positive relationship of weight, no interaction.
+  
+* is this caused just because of lack of representation of older or bigger lifters in some leagues?
+
+```{r}
+ggplot(men2,
+       aes(x=Equipment,y=Age,fill=Equipment))+
+  geom_violin(draw_quantiles = c(0.5))
+
+ggplot(men2,
+       aes(x=Equipment,y=BodyweightKg,fill=Equipment))+
+  geom_violin(draw_quantiles = c(0.5),trim=FALSE)
+
+ggplot(men2,
+       aes(x=Age,y=BodyweightKg,color=Equipment))+
+  geom_point()+
+  facet_wrap(~Equipment)
+```
+
+* When we look at Age, we do see that there are proportionally slightly more older lifters in the Multy-ply and Single-ply categories
+
+* There is a strange trend to have lifters of heavier lifters in the Multi-ply and Wraps divisions. This could be a difference in the weight categories offered by different leagues that support multi-ply, vs ones that don't.
+  + you can see clearly the categories by the wiggle in distribution, each wiggle is a high proportion of people likely at the top of their weight class, where there are less lifters at the bottom of a weight class
+  +These are the only two divisions that do not have a interaction between age and weight
+
+* Overall I am not super convinced by the bodyweight and age interaction term. It seems like there is some skews to the data that could be putting less heavy lifters in the older categories, while there is high overrepresentation of young lifters there (Raw, Wraps).
+
+* On the other hand, the large effect size of Age and Bodyweight separately and in opposite directions is consistent among all categories. It is strange that the effect of age is __much smaller__ in raw and single-ply categories.
+
+* Something smells fishy here though! (and no it's not the knee sleeves I haven't washed in 3 months)
+  + We saw that both Age and Weight have some effect on the weight lifted by people, but do we just see a large proportion of monster heavyweight lifters in the older categories?
+  + Let me clarify here - big guys lift big weights (generally) -> case and point
+
+```{r}
+ggplot(men2,
+       aes(x=BodyweightKg,y=TotalKg,color=Equipment))+
+  geom_point(cex=.3)+
+  facet_wrap(~Equipment) +
+  geom_smooth(method=lm)
+
+```
+
+ + There's fewer big guys in the higher age ranges
+
+```{r}
+ggplot(men,
+       aes(x=Group,y=BodyweightKg,color=TotalKg))+
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE)+
+  scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red") +
+  facet_wrap(~Equipment) +
+  theme(axis.text.x=element_text(angle=90))
+```
+
+* __BUT__ I think it becomes obvious that these relationships behave very differently if we talk about means and maximums. These two metrics paint two separate pictures and I think bodyweight may be part of the explanation (at least in this dataset)
+  + What you see below is the median (less affected by skew than the mean) total weight lifted in each weight category, as well as the maximum weight lifted
+
+```{r}
+ggplot(men2,
+       aes(x=Group,y=TotalKg,fill=Group))+
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE) +
+  facet_wrap(~Equipment) +
+  theme(axis.text.x=element_text(angle=90))
+
+menmed<-men2 %>% 
+  filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
+  group_by(Group,Equipment) %>% 
+  summarize(med_lifts=median(TotalKg))
+
+menmax<-men2 %>% 
+  filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
+  group_by(Group,Equipment) %>% 
+  summarize(max_lifts=max(TotalKg))
+
+ggplot(menmed,
+       aes(x=Group,y=med_lifts,color=Equipment))+
+  geom_point()+
+  facet_wrap(~Equipment)+
+  theme(axis.text.x=element_text(angle=90))
+
+ggplot(menmax,
+       aes(x=Group,y=max_lifts,color=Equipment))+
+  geom_point()+
+  facet_wrap(~Equipment)+
+  theme(axis.text.x=element_text(angle=90))
+
+
+```
+
+* What you see is that the maximum weight lifted in each category declines much more rapidly than the average weight. This does differ between Equipment type with Raw being the smoothest decline and Multi-ply seeming to be the strongest
+  + as example let's take the difference between average 23-25 category and 50-52
+
+```{r}
+med<-menmed %>% 
+  filter(Group=="23-25" || Group=="50-52")
+
+max<-menmax %>% 
+  filter(Group=="23-25" || Group=="50-52")
+
+meddif<-c()
+for(i in 1:(dim(med)[[1]]/2)){
+  meddif[i]<-med[i,"med_lifts"]-med[i+4,"med_lifts"]
+}
+
+maxdif<-c()
+for(i in 1:(dim(max)[[1]]/2)){
+  maxdif[i]<-max[i,"max_lifts"]-max[i+4,"max_lifts"]
+}
+equip<-c("Multi-ply","Raw","Single-ply","Wraps")
+names(meddif)<-equip
+names(maxdif)<-equip
+print(meddif)
+print(maxdif)
+```
+
+* What you see here are the differences between median and then maximum weight lifted at those two age categories.
+  + when we look at median, you see <100kg difference in all categories, and it is as small as 50 kg difference in mean total weight lifted in the raw division
+  + when we look at maximums - __large__ differences appear!
+  + Raw is still with the smallest difference of 62.5kg, while Multi-ply lifters lift 317.52 kg more as a maximum of the 23-25kg category than the maximum in the 50-52. __WHY__?
+  + Let's resubset our data and see who is lifting those weights and how much do they weigh compared to their max counterparts in the older categories
+  
+```{r}
+menmax<-men2 %>% 
+  filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
+  group_by(Group,Equipment,BodyweightKg) %>% 
+  summarize(max_lifts=max(TotalKg))
+
+equip<-c("Multi-ply","Raw","Single-ply","Wraps")
+
+max<-c()
+for(i in unique(menmax$Group)){
+  for(j in equip){
+  sub<-menmax %>% 
+    filter(Group==i && Equipment==j)
+  ord<-order(sub$max_lifts,decreasing=TRUE)
+  sub2<-sub[ord,]
+  max<-rbind(max,sub2[1,])
+}
+}
+
+max2<-max %>% 
+  filter(!is.na(Group)) %>% 
+  mutate(size=BodyweightKg/200)
+
+ggplot(max2,
+       aes(x=Group,y=max_lifts,color=BodyweightKg))+
+  geom_point(aes(cex=size))+
+  facet_wrap(~Equipment)+
+  theme(axis.text.x=element_text(angle=90))+
+  scale_color_gradient2(guide="colourbar",low="yellow",mid="yellow",high="red")
+
+```
+
+* If that doesn't show it, what does. The size and redness of the dot is the weight of the lifter who made a maximum lift. As you get to the older categories, what you see is a consistent decline in both maximum lift and in weight of the lifter.
+
+* Let's show this a little more explicitly with a relationship between weight lifted and weight of lifter
+
+```{r}
+ggplot(max2,
+       aes(x=BodyweightKg,y=max_lifts,color=BodyweightKg))+
+  geom_point(aes(cex=size))+
+  facet_wrap(~Equipment)+
+  scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red")
+```
+
+
+## Younglings
+
+* Let's verify why I threw out the data of people under 22.
+  + They create a hump in the distribution of Total weight lifted because they are still getting stronger. If we plot these side by side, you can see that lifters get stronger till about 23-25 and then plateau there.
+
+```{r}
+men3<-men %>% 
+  filter(Age<26)
+
+ggplot(men3,
+       aes(x=Group,y=TotalKg,fill=Group))+
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE) +
+  facet_wrap(~Equipment) +
+  theme(axis.text.x=element_text(angle=90))
+
+ym<-lm(TotalKg~Age*BodyweightKg+Equipment,data=men3)
+summary(ym)
+```
+* The linear model here reveals a strong positive relationship of both Age and Weight, but a small and barely significant relationship of the interaction term. This means that gaining weight at age 15 gives you slightly more advantage in your total lifts than gaining weight at 23, but slightly!
+
+#Federation
+
+* Let's take a look at the meets.csv file which gives us some more data on federations in which these occurred.
+
+```{r}
+meets<-read.csv("~/power/data/open/openpowerlifting/meets.csv")
+str(meets)
+```
+
+* Let's merge these two databases
+
+```{r}
+all<-merge(open,meets,by="MeetID")
+
+men<-all %>%
+  filter(Sex=="M") %>% 
+  filter(Federation==c("USAPL","USPA","IPF","IPL"))
+
+ggplot(men,
+       aes(x=Federation,y=TotalKg,fill=Federation))+
+  geom_violin(draw_quantiles = 0.5,trim=FALSE)
+
+```
