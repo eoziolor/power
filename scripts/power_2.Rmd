@@ -1,19 +1,44 @@
 ---
-title: "power_2"
+title: "Power project"
 author: "Elias"
 date: "May 10, 2018"
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
-#Power project
+# __Power project__ Part I: Age
 
-## Here I'll analyse some data from the open powerlifting project.
-* Downloaded data from https://www.openpowerlifting.org/data.html on May 9th, 2018
-* Let's play
+## Introductions
+
+My name is Elias Oziolor and I am a scientist. Most of the time I study how organisms evolve to resist human derived pollution, but that also entails dealing with a lot of data. The more I do this, the more I realized that I really enjoy playing with data and trying to tease apart the patterns that it is _hiding_. Some people use the metaphore of a puzzle, but I think of it as a big fat knot. It is frustrating and messy, but as you begin to unwinding it, there is a great sense of accomplishment in figuring out the patterns.
+
+__So why do I start with powerlifter data?__
+
+* Powerlifting is my hobby. Nowadays it's one of the only ones that I consistently pursue as my job takes over most of my time, but I like to spare an hour here and there and lift some heavy weights. 
+* I love digging through data and I recently found this dataset that has some potential.
+* One of my goals in life is to teach and inspire people to think critically, as well as be creative with my own research.
+
+What I'll do here is epxlore a large dataset and see what kinds of patterns I can tease out by playing with the data and doing some stats on it.
+
+### What you need to keep in mind
+
+__I am not a human health and performance scientist!__ Any of the conclusions that I make here are purely derived from the data of a bunch of strong women and men, lifting weights. I will try to make no absolute claims on human performance or abilities. Here I hope to inspire some poeple to not take what others tell them at face value, and also to see what 600 000 powerlifting results can teach us about strength.
+
+### The data
+__This dataset has 600 000 entries!__ Many of these are partial and I will filter them out in some analyses and not others. I will keep you informed on the sample size of each graph and how strong I think the conclusions drawn from it can be. I downloaded the data from https://www.openpowerlifting.org/data.html on May 9th, 2018. __SO CAN YOU__.
+
+The other big goal of this dataset is to showcase that you can do all of this analysis if you wanted to. Alongside the blogpost (which includes text and figures), I will also post a markdown version of the post. This will include all of my code, with annotations for what each portion is doing. All of this analysis is done in R, which is the language that feels the most intuitive to me for reformatting and plotting data. If you want to learn - check out the code.
+
+### Comments and questions
+
+If you have comments, concerns or just questions about the analysis or code _do not hesitate to contact me_! I am happy to chat about this.
+
+__Now let's play__
+
+The first thing that I will do is getting the data and all the necessary packages that I need from R to analyze it.
 
 ```{r}
-library('lme4')
+library(lme4)
 library(tidyr)
 library(RColorBrewer)
 library(ggplot2)
@@ -21,42 +46,49 @@ library(dplyr)
 library(gtools)
 library(tinytex)
 
-open<-read.csv("~/power/data/open/openpowerlifting/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE)
-str(open)
+open<-read.csv("openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
+# open<-read.csv("openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
+# meets<-read.csv("meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
+# all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
+# 
+str(open) #getting the structure of the new document
 
 ```
 * Let's start taking a look at the data.
-    + First I will group people in age groups (3 year groups)
+    + First I will group people in age groups (5 year groups)
     + Then subset it into men and women
 
 ```{r}
-#assigning age groups
-# group<-seq(from=range(open$Age,na.rm=TRUE)[[1]],
-#            to=range(open$Age,na.rm=TRUE)[[2]],
-#            by=3)
+#Creating a vector of ages in increments of 5
+# group<-seq(from=range(all$Age,na.rm=TRUE)[[1]],
+#             to=range(all$Age,na.rm=TRUE)[[2]],
+#             by=5)
 # 
-# group_range<-c()
-# group2<-c(group-1,100)
-# for(i in 1:length(group)){
-#   if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
-#   next()
-#   }
-#   group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
+# group_range<-c() #creating a vector that will hold those ranges
+# group2<-c(group-1,100) #creating a second vector that has 100 as the maximum of it
+# for(i in 1:length(group)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+#  if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
+#  next()
+#  }
+#  group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
 # } #making these into ranges rather than just the minimums
 # 
-# open<-cbind(open,Group=NA) #run once
+#Run the following only once as it takes a while (20 mins)
+# all<-cbind(all,Group=NA) # Adding a column of Group to the big dataset
+# all$Age<-round(all$Age) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+# 
 # #adding a column of ranges
-# for(i in 1:length(open$Age)){
-#   if(is.na(open$Age[i])){next()}
-#   for(j in 1:length(group)){
-#     if(open$Age[i]>=group[j]&&open$Age[i]<=group2[j+1]){
-#     open$Group[i]<-group_range[j]
-#     }
-#   }
+# for(i in 1:length(all$Age)){
+#  if(is.na(all$Age[i])){next()} #remove this estimation from all NAs
+#  for(j in 1:length(group)){
+#    if(all$Age[i]>=group[j]&&all$Age[i]<=group2[j+1]){ #iterate over groups and find which group Age this falls into
+#    all$Group[i]<-group_range[j] #assign the necessary group range to that age
+#    }
+#  }
 # }
-
-#writing table for future use because the chunk above takes FOREVER
-#write.table(open,"~/power/data/open/openpowerlifting/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+# 
+# # #writing table for future use because the chunk above takes FOREVER
+# write.table(all,"openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
 
 ord<-mixedorder(open$Group)
 open2<-open[ord,]
@@ -65,11 +97,13 @@ open2$Group<-factor(open2$Group,levels=unique(open2$Group))
 
 men<-open2 %>% 
   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>% 
   filter(Sex=="M") %>% 
   select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
 
 women<-open2 %>% 
   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>% 
   filter(Sex=="F") %>% 
   select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
 
@@ -104,7 +138,7 @@ ggplot(women,
 
 ggplot(men,
        aes(x=Group,y=TotalKg,fill=Group))+
-  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE) +
+  geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=TRUE,scale="width") +
   facet_wrap(~Equipment) +
   theme(axis.text.x=element_text(angle=90))
 
@@ -122,7 +156,7 @@ summary(line)
 
 ```{r}
 men2<-men %>% 
-  filter(Age>22)
+  filter(Age>24)
 
 ggplot(men2,
        aes(x=Group,y=TotalKg,fill=Group))+
@@ -225,7 +259,7 @@ ggplot(men2,
  + There's fewer big guys in the higher age ranges
 
 ```{r}
-ggplot(men,
+ggplot(men2,
        aes(x=Group,y=BodyweightKg,color=TotalKg))+
   geom_violin(draw_quantiles=c(0.5),aes(fill=Group),trim=FALSE)+
   scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red") +
@@ -273,10 +307,10 @@ ggplot(menmax,
 
 ```{r}
 med<-menmed %>% 
-  filter(Group=="23-25" || Group=="50-52")
+  filter(Group=="25-29" || Group=="50-54")
 
 max<-menmax %>% 
-  filter(Group=="23-25" || Group=="50-52")
+  filter(Group=="25-29" || Group=="50-54")
 
 meddif<-c()
 for(i in 1:(dim(med)[[1]]/2)){
@@ -295,9 +329,9 @@ print(maxdif)
 ```
 
 * What you see here are the differences between median and then maximum weight lifted at those two age categories.
-  + when we look at median, you see <100kg difference in all categories, and it is as small as 50 kg difference in mean total weight lifted in the raw division
+  + when we look at median, you see <90kg difference in all categories, and it is as small as 55 kg difference in mean total weight lifted in the raw division
   + when we look at maximums - __large__ differences appear!
-  + Raw is still with the smallest difference of 62.5kg, while Multi-ply lifters lift 317.52 kg more as a maximum of the 23-25kg category than the maximum in the 50-52. __WHY__?
+  + Raw is still with the smallest difference of 177.5kg, while Multi-ply lifters lift 317.52 kg more as a maximum of the 25-29kg category than the maximum in the 50-55. __WHY__?
   + Let's resubset our data and see who is lifting those weights and how much do they weigh compared to their max counterparts in the older categories
   
 ```{r}
@@ -370,18 +404,14 @@ summary(ym)
 * Let's take a look at the meets.csv file which gives us some more data on federations in which these occurred.
 
 ```{r}
-meets<-read.csv("~/power/data/open/openpowerlifting/meets.csv")
-str(meets)
-```
 
-* Let's merge these two databases
-
-```{r}
-all<-merge(open,meets,by="MeetID")
-
-men<-all %>%
+men<-open %>%
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>% 
   filter(Sex=="M") %>% 
-  filter(Federation==c("USAPL","USPA","IPF","IPL"))
+  filter(Federation==c("USAPL","USPA","IPF","IPL")) %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,Federation)
+ 
 
 ggplot(men,
        aes(x=Federation,y=TotalKg,fill=Federation))+
