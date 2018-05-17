@@ -46,11 +46,11 @@ library(dplyr)
 library(gtools)
 library(tinytex)
 
-open<-read.csv("~/power/data/open/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
-# open<-read.csv("~/power/data/open/openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
-# meets<-read.csv("~/power/data/open/meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
-# all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
-# # 
+#open<-read.csv("~/power/data/open/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
+open<-read.csv("~/power/data/open/openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
+meets<-read.csv("~/power/data/open/meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
+all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
+# # # 
 str(open) #getting the structure of the new document
 
 ```
@@ -63,35 +63,67 @@ I am also breaking them up into men and women for physiological reasons. I will 
 
 ```{r}
 #Creating a vector of ages in increments of 5
-# group<-seq(from=range(all$Age,na.rm=TRUE)[[1]],
-#             to=range(all$Age,na.rm=TRUE)[[2]],
-#             by=5)
-# 
-# group_range<-c() #creating a vector that will hold those ranges
-# group2<-c(group-1,100) #creating a second vector that has 100 as the maximum of it
-# for(i in 1:length(group)){ #creating teh group-range vector that will have info about a range, rather than a single digit
-#  if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
-#  next()
-#  }
-#  group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
-# } #making these into ranges rather than just the minimums
-# 
-# #Run the following only once as it takes a while (20 mins)
-# all<-cbind(all,Group=NA) # Adding a column of Group to the big dataset
-# all$Age<-round(all$Age) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
-# 
-# #adding a column of ranges
-# for(i in 1:length(all$Age)){
-#  if(is.na(all$Age[i])){next()} #remove this estimation from all NAs
-#  for(j in 1:length(group)){
-#    if(all$Age[i]>=group[j]&&all$Age[i]<=group2[j+1]){ #iterate over groups and find which group Age this falls into
-#    all$Group[i]<-group_range[j] #assign the necessary group range to that age
-#    }
-#  }
-# }
-# 
-#  # #writing table for future use because the chunk above takes FOREVER
+group<-seq(from=range(all$Age,na.rm=TRUE)[[1]],
+            to=range(all$Age,na.rm=TRUE)[[2]],
+            by=5)
+
+group_range<-c() #creating a vector that will hold those ranges
+group2<-c(group-1,100) #creating a second vector that has 100 as the maximum of it
+for(i in 1:length(group)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+ if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
+ next()
+ }
+ group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
+} #making these into ranges rather than just the minimums
+
+#Run the following only once as it takes a while (20 mins)
+all<-cbind(all,Group=NA) # Adding a column of Group to the big dataset
+all$Age<-round(all$Age) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+
+#adding a column of ranges
+for(i in 1:length(all$Age)){
+ if(is.na(all$Age[i])){next()} #remove this estimation from all NAs
+ for(j in 1:length(group)){
+   if(all$Age[i]>=group[j]&&all$Age[i]<=group2[j+1]){ #iterate over groups and find which group Age this falls into
+   all$Group[i]<-group_range[j] #assign the necessary group range to that age
+   }
+ }
+}
+
+#Adding weight groups (all freaking federations have different weightclasses so it's easier to actually group myself)
+groupkg<-seq(from=range(all$BodyweightKg,na.rm=TRUE)[[1]],
+            to=range(all$BodyweightKg,na.rm=TRUE)[[2]],
+            by=10)
+groupkg<-round(groupkg)
+
+groupkg_range<-c() #creating a vector that will hold those ranges
+groupkg2<-c(groupkg-1,260) #creating a second vector that has 260 as the maximum of it
+for(i in 1:length(groupkg)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+ if(i==length(groupkg)){groupkg_range[i]<-paste(c(groupkg[i],"260"),collapse="-")
+ next()
+ }
+ groupkg_range[i]<-(paste(c(groupkg[i],groupkg2[i+1]),collapse="-"))
+} #making these into ranges rather than just the minimums
+
+#Run the following only once as it takes a while (20 mins)
+all<-cbind(all,GroupKG=NA) # Adding a column of Group to the big dataset
+all$BodyweightKg<-round(all$BodyweightKg) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+
+#adding a column of ranges
+for(i in 1:length(all$BodyweightKg)){
+ if(is.na(all$BodyweightKg[i])){next()} #remove this estimation from all NAs
+ for(j in 1:length(groupkg)){
+   if(all$BodyweightKg[i]>=groupkg[j]&&all$BodyweightKg[i]<=groupkg2[j+1]){ #iterate over groups and find which group BW falls
+   all$GroupKG[i]<-groupkg_range[j] #assign the necessary group range to that age
+   }
+ }
+}
+
+
+#  # #writing table for future use because the chunk above takes FOREVER (30 min-ish)
 #  write.table(all,"~/power/data/open/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
+
 
 ord<-mixedorder(open$Group) #sorting by the group column so that they plot by age
 open2<-open[ord,] #aplying that to the whole dataframe
@@ -102,13 +134,13 @@ men<-open2 %>% #making a table of men who have completed full competitions and h
   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
   filter(!is.na(Age)) %>% 
   filter(Sex=="M") %>% 
-  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg)
 
 women<-open2 %>% #same for women
   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
   filter(!is.na(Age)) %>% 
   filter(Sex=="F") %>% 
-  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group)
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg)
 
 ```
 ## How much does age matter in the weight you lift?
@@ -377,28 +409,16 @@ ggplot(men2,
   facet_wrap(~Equipment) +
   theme(axis.text.x=element_text(angle=90))
 
-menmed<-men2 %>% 
+mensum<-men2 %>% 
   filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
   group_by(Group,Equipment) %>% 
-  summarize(med_lifts=median(TotalKg))
+  summarize(med_lifts=median(TotalKg),max_lifts=max(TotalKg))
 
-menmax<-men2 %>% 
-  filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
-  group_by(Group,Equipment) %>% 
-  summarize(max_lifts=max(TotalKg))
-
-ggplot(menmed,
-       aes(x=Group,y=med_lifts,color=Equipment))+
-  geom_point()+
+ggplot(mensum,aes(color=Equipment))+
+  geom_point(aes(x=Group,y=med_lifts))+
+  geom_point(aes(x=Group,y=max_lifts))+
   facet_wrap(~Equipment)+
   theme(axis.text.x=element_text(angle=90))
-
-ggplot(menmax,
-       aes(x=Group,y=max_lifts,color=Equipment))+
-  geom_point()+
-  facet_wrap(~Equipment)+
-  theme(axis.text.x=element_text(angle=90))
-
 
 ```
 
@@ -442,25 +462,14 @@ ggplot(women2,
   facet_wrap(~Equipment) +
   theme(axis.text.x=element_text(angle=90))
 
-womenmed<-women2 %>% 
+womensum<-women2 %>% 
   filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
   group_by(Group,Equipment) %>% 
-  summarize(med_lifts=median(TotalKg))
+  summarize(med_lifts=median(TotalKg),max_lifts=max(TotalKg))
 
-womenmax<-women2 %>% 
-  filter(!is.na(Group),!is.na(BodyweightKg),!is.na(TotalKg)) %>% 
-  group_by(Group,Equipment) %>% 
-  summarize(max_lifts=max(TotalKg))
-
-ggplot(womenmed,
-       aes(x=Group,y=med_lifts,color=Equipment))+
-  geom_point()+
-  facet_wrap(~Equipment)+
-  theme(axis.text.x=element_text(angle=90))
-
-ggplot(womenmax,
-       aes(x=Group,y=max_lifts,color=Equipment))+
-  geom_point()+
+ggplot(womensum,aes(color=Equipment))+
+  geom_point(aes(x=Group,y=med_lifts))+
+  geom_point(aes(x=Group,y=max_lifts))+
   facet_wrap(~Equipment)+
   theme(axis.text.x=element_text(angle=90))
 
@@ -584,6 +593,14 @@ ggplot(max2,
   scale_color_gradient2(guide="colourbar",low="yellow",mid="gold",high="red")
 ```
 This is relatively consistent! A bit more noise than the male data, but a __very__ similar relationship.
+
+Now one last thing that we need to see is if this is consistent within weight classes between ages. Let's first look at performance of lifters in weightlcasses
+
+```{r}
+
+
+
+```
 
 ##What does this mean?
 
