@@ -1,0 +1,35 @@
+---
+title: "Power_1"
+author: "Elias"
+date: "May 17, 2018"
+output: html_document
+---
+
+# __Powerful data project__ 
+
+## Introductions
+
+My name is Elias Oziolor and I am a scientist. Most of the time I study how organisms evolve to resist human derived pollution, but that also entails dealing with a lot of data. The more I do this, the more I realized that I really enjoy playing with data and trying to tease apart the patterns that it is _hiding_. Some people use the metaphore of a puzzle, but I think of it as a big fat knot. It is frustrating and messy, but as you begin to unwinding it, there is a great sense of accomplishment in figuring out the patterns.
+
+__So why do I start with powerlifter data?__
+
+* Powerlifting is my hobby. Nowadays it's one of the only ones that I consistently pursue as my job takes over most of my time, but I like to spare an hour here and there and lift some heavy weights. 
+* I love digging through data and I recently found this dataset that has some potential.
+* One of my goals in life is to teach and inspire people to think critically, as well as be creative with my own research.
+
+What I'll do here is epxlore a large dataset and see what kinds of patterns I can tease out by playing with the data and doing some stats on it.
+
+### What you need to keep in mind
+
+__I am not a human health and performance scientist!__ Any of the conclusions that I make here are purely derived from the data of a bunch of strong women and men, lifting weights. I will try to make no absolute claims on human performance or abilities. Here I hope to inspire some poeple to not take what others tell them at face value, and also to see what 600 000 powerlifting results can teach us about strength.
+
+### The data
+__This dataset has 600 000 entries!__ Many of these are partial and I will filter them out in some analyses and not others. I will keep you informed on the sample size of each graph and how strong I think the conclusions drawn from it can be. I downloaded the data from https://www.openpowerlifting.org/data.html on May 15th, 2018. __SO CAN YOU__.
+
+The other big goal of this dataset is to showcase that you can do all of this analysis if you wanted to. Alongside the blogpost (which includes text and figures), I will also post a markdown version of the post. This will include all of my code, with annotations for what each portion is doing. All of this analysis is done in R, which is the language that feels the most intuitive to me for reformatting and plotting data. If you want to learn - check out the code.
+
+### Comments and questions
+
+If you have comments, concerns or just questions about the analysis or code _do not hesitate to contact me_! I am happy to chat about this.
+
+__Now let's play__
