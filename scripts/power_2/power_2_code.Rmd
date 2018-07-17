@@ -908,18 +908,3 @@ yw<-lm(TotalKg~Age+BodyweightKg+Equipment,data=women3)
 summary(yw)
 ```
 * The linear model here reveals a strong positive relationship of both Age and Weight.
-
-```{r}
-# 
-# men<-open %>%
-#   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
-#   filter(!is.na(Age)) %>% 
-#   filter(Sex=="M") %>% 
-#   filter(Federation==c("USAPL","USPA","IPF","IPL")) %>% 
-#   select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,Federation)
-#  
-# 
-# ggplot(men,
-#        aes(x=Federation,y=TotalKg,fill=Federation))+
-#   geom_violin(draw_quantiles = 0.5,trim=FALSE)
-```

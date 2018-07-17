@@ -1,0 +1,163 @@
+---
+title: "Power_3"
+author: "Elias"
+date: "May 21, 2018"
+output: html_document
+---
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+library(RWordPress)
+library(knitr)
+#knit2wp("~/power/scripts/power_2/power_2.Rmd",title="Part I: Getting old? You can still lift!")
+```
+# __Powerful Data Project__ Part II: Water cuts and drug testing
+
+There is a lot of fuss about steroids! Many are proponents of _using them right_ and many say that they can cause _roid rage_, which presents as agression, unpredictability and backne...almost like being really hungry teenager with a temper. But the question that a lot of lifters like me have asked themselves is:
+
+_Is taking steroids worth it?_
+
+My opinion is that this is a very personal decision that anyone interested in strength or physique needs to make on their own. In the lifting world you will rarely find someone who hasn't had to make that decision at one point. Here's how I made mine:
+
+When I was a kid, just starting to lift more seriously to lose some weight. As many, I started with bodybuilding and managed to lose 100+ lbs. At one point I hit a wall. It had been about 2-3 years into lifting and I was getting pretty good results. However, I wasn't improving as quickly anymore. I went to the owner of my hometown gym, long time family friend and also a former professional bodybuilder (now IFBB judge) and asked him if I should try anabolic steroids. I won't give you too much detail, but he diswayed me from that idea rather quickly. He made his strongest argument with a question: "Will you ever make bodybuilding your career?". I knew I wasn't and that led me to think for a while about what steroids would do for me. For myself, the pros did not outweigh the cons, they didn't even come close. So I never tried and I don't think I ever will...unless they get legalized after the government finally allows scientists to analyze their effects on the human body.
+
+_Shameless plug for science_: Restricting scientists from testing products that are used worldwide and impact many lives is just stupid. Criminalizing steroid use is not stopping almost anybody from taking them and you will be surprised at the frequency of people, who don't necessarily look it like it, but still take steroids by the perscription of the local gym guru. Don't let Randy tell people what/how much/how often to take steroids...let scientists apply their methods and tell you what is "safe."
+
+__MOVE IT ALONG, ELIAS__...I know. Let's get to the point of this article. Do steroids help you lift more weights??
+
+The approach that I am taking here is the following: I will break down the dataset into two groups - lifters that compete in a federation that is drug tested and lifters that compete in a non-drug tested league. Several assumptions made here:
+
+  + I will assume that drug tested federations only have drug-free athletes. This is definitely not always true. There have been lifters that admit to taking steroids, while they avoid detection, but that's a deeper issue that this dataset is not equipped at getting at. And those lifters are likely fewer than the majority that just wants to compete in a drug-free federation.
+  
+  + The newly created USPA drug-tested sub-federation is not clearly defined in this dataset, which is why I will lump those lifts with non-drug tested results. Since this has only happened in the last year or so, it is not likely to influence our results much.
+  
+  + I will assume that lifters in non-drug tested federations take steroids. This is definitely not always true, but there are a few reasons I am making this assumption: 1) If you weren't taking steroids and you think steroids make people stronger, you should probably be competing in a drug tested federation because that just puts you in a disadvantage. 2) there are likely more lifters that take steroids in non-drug tested federations than the ones that don't, so that will likely sway the data more to the true mean of enhanced lifters.
+
+Let's take a look
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+library(lme4)
+library(tidyr)
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(gtools)
+library(tinytex)
+
+open<-read.csv("~/power/data/open/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
+# open<-read.csv("~/power/data/open/openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
+# meets<-read.csv("~/power/data/open/meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
+# all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
+# # # 
+str(open) #getting the structure of the new document
+
+```
+
+Obviously this is a fantastic and well kept dataset! __Great job__ openpowerlifting.com!
+
+I want to draw your attention that there are so many columns in this dataset, each containing unique information about each lifter. This will give us a lot of power to draw some observations about patterns of skills and potentials of the lifters. First I want to start by breaking them up into age ranges. I don't like the ones drawn by more federations for my purposes. I want to have a bit higher resolution, so I will break them up into 5 year age gaps and see how things go from there.
+
+I am also breaking them up into men and women for physiological reasons. I will be asking questions about max lift strength, so I don't want to obscure the findings for either of those groups.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+#Creating a vector of ages in increments of 5
+# group<-seq(from=range(all$Age,na.rm=TRUE)[[1]],
+#             to=range(all$Age,na.rm=TRUE)[[2]],
+#             by=5)
+# 
+# group_range<-c() #creating a vector that will hold those ranges
+# group2<-c(group-1,100) #creating a second vector that has 100 as the maximum of it
+# for(i in 1:length(group)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+#  if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
+#  next()
+#  }
+#  group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
+# } #making these into ranges rather than just the minimums
+# 
+# #Run the following only once as it takes a while (20 mins)
+# all<-cbind(all,Group=NA) # Adding a column of Group to the big dataset
+# all$Age<-round(all$Age) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+# 
+# #adding a column of ranges
+# for(i in 1:length(all$Age)){
+#  if(is.na(all$Age[i])){next()} #remove this estimation from all NAs
+#  for(j in 1:length(group)){
+#    if(all$Age[i]>=group[j]&&all$Age[i]<=group2[j+1]){ #iterate over groups and find which group Age this falls into
+#    all$Group[i]<-group_range[j] #assign the necessary group range to that age
+#    }
+#  }
+# }
+# 
+# #Adding weight groups (all freaking federations have different weightclasses so it's easier to actually group myself)
+# groupkg<-seq(from=range(all$BodyweightKg,na.rm=TRUE)[[1]],
+#             to=range(all$BodyweightKg,na.rm=TRUE)[[2]],
+#             by=10)
+# groupkg<-round(groupkg)
+# 
+# groupkg_range<-c() #creating a vector that will hold those ranges
+# groupkg2<-c(groupkg-1,260) #creating a second vector that has 260 as the maximum of it
+# for(i in 1:length(groupkg)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+#  if(i==length(groupkg)){groupkg_range[i]<-paste(c(groupkg[i],"260"),collapse="-")
+#  next()
+#  }
+#  groupkg_range[i]<-(paste(c(groupkg[i],groupkg2[i+1]),collapse="-"))
+# } #making these into ranges rather than just the minimums
+# 
+# #Run the following only once as it takes a while (20 mins)
+# all<-cbind(all,GroupKG=NA) # Adding a column of Group to the big dataset
+# all$BodyweightKg<-round(all$BodyweightKg) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+# 
+# #adding a column of ranges
+# for(i in 1:length(all$BodyweightKg)){
+#  if(is.na(all$BodyweightKg[i])){next()} #remove this estimation from all NAs
+#  for(j in 1:length(groupkg)){
+#    if(all$BodyweightKg[i]>=groupkg[j]&&all$BodyweightKg[i]<=groupkg2[j+1]){ #iterate over groups and find which group BW falls
+#    all$GroupKG[i]<-groupkg_range[j] #assign the necessary group range to that age
+#    }
+#  }
+# }
+# 
+# 
+# #  # #writing table for future use because the chunk above takes FOREVER (30 min-ish)
+# write.table(all,"~/power/data/open/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
+
+ord<-mixedorder(open$Group) #sorting by the group column so that they plot by age
+open2<-open[ord,] #aplying that to the whole dataframe
+open2$Group<-factor(open2$Group,levels=unique(open2$Group)) #arranging the factors now.
+
+men<-open2 %>% #making a table of men who have completed full competitions and have Age data
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>%
+  filter(Sex=="M") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
+
+women<-open2 %>% #same for women
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>% 
+  filter(Sex=="F") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
+
+```
+
+## Let's see how many leagues are represented and how frequently
+
+```{r}
+table(open$Federation)
+ord<-order(as.matrix(table(open$Federation)),decreasing = TRUE)
+feds<-as.matrix(table(open$Federation))
+feds[ord,]
+```
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+# 
+# men<-open2 %>%
+#   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+#   filter(!is.na(Age)) %>% 
+#   filter(Sex=="M") %>% 
+#   filter(Federation==c("USAPL","USPA","IPF","IPL")) %>% 
+#   select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,Federation)
+#  
+# 
+# ggplot(men,
+#        aes(x=Federation,y=TotalKg,fill=Federation))+
+#   geom_violin(draw_quantiles = 0.5,trim=FALSE)
+```

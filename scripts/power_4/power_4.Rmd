@@ -1,0 +1,115 @@
+---
+title: "power_4"
+author: "Elias"
+date: "May 21, 2018"
+output: html_document
+---
+# __Powerful Data Project__ Part III: Are we better lifters than our moms and dads?
+
+
+
+
+```{r}
+library(lme4)
+library(tidyr)
+library(RColorBrewer)
+library(ggplot2)
+library(dplyr)
+library(gtools)
+library(tinytex)
+
+open<-read.csv("~/power/data/open/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
+# open<-read.csv("~/power/data/open/openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
+# meets<-read.csv("~/power/data/open/meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
+# all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
+# # # 
+str(open) #getting the structure of the new document
+
+```
+
+Obviously this is a fantastic and well kept dataset! __Great job__ openpowerlifting.com!
+
+I want to draw your attention that there are so many columns in this dataset, each containing unique information about each lifter. This will give us a lot of power to draw some observations about patterns of skills and potentials of the lifters. First I want to start by breaking them up into age ranges. I don't like the ones drawn by more federations for my purposes. I want to have a bit higher resolution, so I will break them up into 5 year age gaps and see how things go from there.
+
+I am also breaking them up into men and women for physiological reasons. I will be asking questions about max lift strength, so I don't want to obscure the findings for either of those groups.
+
+```{r}
+#Creating a vector of ages in increments of 5
+# group<-seq(from=range(all$Age,na.rm=TRUE)[[1]],
+#             to=range(all$Age,na.rm=TRUE)[[2]],
+#             by=5)
+# 
+# group_range<-c() #creating a vector that will hold those ranges
+# group2<-c(group-1,100) #creating a second vector that has 100 as the maximum of it
+# for(i in 1:length(group)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+#  if(i==length(group)){group_range[i]<-paste(c(group[i],"100"),collapse="-")
+#  next()
+#  }
+#  group_range[i]<-(paste(c(group[i],group2[i+1]),collapse="-"))
+# } #making these into ranges rather than just the minimums
+# 
+# #Run the following only once as it takes a while (20 mins)
+# all<-cbind(all,Group=NA) # Adding a column of Group to the big dataset
+# all$Age<-round(all$Age) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+# 
+# #adding a column of ranges
+# for(i in 1:length(all$Age)){
+#  if(is.na(all$Age[i])){next()} #remove this estimation from all NAs
+#  for(j in 1:length(group)){
+#    if(all$Age[i]>=group[j]&&all$Age[i]<=group2[j+1]){ #iterate over groups and find which group Age this falls into
+#    all$Group[i]<-group_range[j] #assign the necessary group range to that age
+#    }
+#  }
+# }
+# 
+# #Adding weight groups (all freaking federations have different weightclasses so it's easier to actually group myself)
+# groupkg<-seq(from=range(all$BodyweightKg,na.rm=TRUE)[[1]],
+#             to=range(all$BodyweightKg,na.rm=TRUE)[[2]],
+#             by=10)
+# groupkg<-round(groupkg)
+# 
+# groupkg_range<-c() #creating a vector that will hold those ranges
+# groupkg2<-c(groupkg-1,260) #creating a second vector that has 260 as the maximum of it
+# for(i in 1:length(groupkg)){ #creating teh group-range vector that will have info about a range, rather than a single digit
+#  if(i==length(groupkg)){groupkg_range[i]<-paste(c(groupkg[i],"260"),collapse="-")
+#  next()
+#  }
+#  groupkg_range[i]<-(paste(c(groupkg[i],groupkg2[i+1]),collapse="-"))
+# } #making these into ranges rather than just the minimums
+# 
+# #Run the following only once as it takes a while (20 mins)
+# all<-cbind(all,GroupKG=NA) # Adding a column of Group to the big dataset
+# all$BodyweightKg<-round(all$BodyweightKg) #rounding age because the following code doesn't deal well with .5's and they are stupid anyways
+# 
+# #adding a column of ranges
+# for(i in 1:length(all$BodyweightKg)){
+#  if(is.na(all$BodyweightKg[i])){next()} #remove this estimation from all NAs
+#  for(j in 1:length(groupkg)){
+#    if(all$BodyweightKg[i]>=groupkg[j]&&all$BodyweightKg[i]<=groupkg2[j+1]){ #iterate over groups and find which group BW falls
+#    all$GroupKG[i]<-groupkg_range[j] #assign the necessary group range to that age
+#    }
+#  }
+# }
+# 
+# 
+# #  # #writing table for future use because the chunk above takes FOREVER (30 min-ish)
+# write.table(all,"~/power/data/open/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
+
+ord<-mixedorder(open$Group) #sorting by the group column so that they plot by age
+open2<-open[ord,] #aplying that to the whole dataframe
+open2$Group<-factor(open2$Group,levels=unique(open2$Group)) #arranging the factors now.
+
+men<-open2 %>% #making a table of men who have completed full competitions and have Age data
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>%
+  filter(Sex=="M") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg)
+
+women<-open2 %>% #same for women
+  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(!is.na(Age)) %>% 
+  filter(Sex=="F") %>% 
+  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg)
+
+```
