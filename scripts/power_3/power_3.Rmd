@@ -40,7 +40,6 @@ Let's take a look
 * Data was downloaded on 7-23-18 from openpowerlifting.com/data
 
 ```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
-install.packages("tidyr")
 library(lme4)
 library(tidyr)
 library(RColorBrewer)
@@ -130,16 +129,16 @@ open2<-open[ord,] #aplying that to the whole dataframe
 open2$Group<-factor(open2$Group,levels=unique(open2$Group)) #arranging the factors now.
 
 men<-open2 %>% #making a table of men who have completed full competitions and have Age data
-  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>% 
   filter(!is.na(Age)) %>%
   filter(Sex=="M") %>% 
-  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
 
 women<-open2 %>% #same for women
-  filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>% 
   filter(!is.na(Age)) %>% 
   filter(Sex=="F") %>% 
-  select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,WeightClassKg,Federation)
 
 ```
 
@@ -153,16 +152,16 @@ feds[ord,]
 ```
 
 ```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
-# 
-# men<-open2 %>%
-#   filter(BestBenchKg>0 & BestDeadliftKg>0 & BestSquatKg>0) %>% 
-#   filter(!is.na(Age)) %>% 
-#   filter(Sex=="M") %>% 
-#   filter(Federation==c("USAPL","USPA","IPF","IPL")) %>% 
-#   select(Equipment,Age,BodyweightKg,BestSquatKg,BestBenchKg,BestDeadliftKg,TotalKg,Wilks,Group,Federation)
-#  
-# 
-# ggplot(men,
-#        aes(x=Federation,y=TotalKg,fill=Federation))+
-#   geom_violin(draw_quantiles = 0.5,trim=FALSE)
+
+men<-open2 %>%
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
+  filter(!is.na(Age)) %>%
+  filter(Sex=="M") %>%
+  filter(Federation==c("USAPL","USPA","IPF","IPL")) %>%
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation)
+
+
+ggplot(men,
+       aes(x=Federation,y=TotalKg,fill=Federation))+
+  geom_violin(draw_quantiles = 0.5,trim=FALSE)
 ```
