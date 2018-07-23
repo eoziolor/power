@@ -40,6 +40,7 @@ Let's take a look
 * Data was downloaded on 7-23-18 from openpowerlifting.com/data
 
 ```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+install.packages("tidyr")
 library(lme4)
 library(tidyr)
 library(RColorBrewer)
@@ -122,7 +123,7 @@ I am also breaking them up into men and women for physiological reasons. I will 
 # #writing table for future use because the chunk above takes FOREVER (30 min-ish)
 # write.table(all,"~/power/data/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
 
-
+open<-read.csv("~/power/data/openpowerlifting2.csv",header=TRUE,stringsAsFactors = FALSE)
 
 ord<-mixedorder(open$Group) #sorting by the group column so that they plot by age
 open2<-open[ord,] #aplying that to the whole dataframe
