@@ -33,6 +33,12 @@ The approach that I am taking here is the following: I will break down the datas
 
 Let's take a look
 
+### Disclaimer and info
+
+* As always I want to remind you that I am just a scientist interested in parsing datasets, rather than one that can make experimental claims on this data. So take it or leave it.
+
+* Data was downloaded on 7-23-18 from openpowerlifting.com/data
+
 ```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 library(lme4)
 library(tidyr)
@@ -42,12 +48,9 @@ library(dplyr)
 library(gtools)
 library(tinytex)
 
-open<-read.csv("~/power/data/open/openpowerlifting2.csv",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
-# open<-read.csv("~/power/data/open/openpowerlifting.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the first csv document
-# meets<-read.csv("~/power/data/open/meets.csv",head=TRUE,stringsAsFactors = FALSE) #reading in the one containing meets
-# all<-merge(open,meets,by="MeetID") #merging them by column (MeetID, the only repeated column)
-# # # 
-str(open) #getting the structure of the new document
+# all<-read.csv("~/power/data/openpowerlifting.csv.bz2",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
+# 
+# str(all) #getting the structure of the new document
 
 ```
 
@@ -114,10 +117,11 @@ I am also breaking them up into men and women for physiological reasons. I will 
 #    }
 #  }
 # }
-# 
-# 
-# #  # #writing table for future use because the chunk above takes FOREVER (30 min-ish)
-# write.table(all,"~/power/data/open/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
+
+# #writing table for future use because the chunk above takes FOREVER (30 min-ish)
+# write.table(all,"~/power/data/openpowerlifting2.csv",quote=FALSE,row.names = FALSE,sep=',')
+
 
 
 ord<-mixedorder(open$Group) #sorting by the group column so that they plot by age
