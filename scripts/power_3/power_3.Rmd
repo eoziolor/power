@@ -47,6 +47,8 @@ library(ggplot2)
 library(dplyr)
 library(gtools)
 library(tinytex)
+library(reshape)
+library(class)
 
 # all<-read.csv("~/power/data/openpowerlifting.csv.bz2",head=TRUE,stringsAsFactors = FALSE) #reading in a re-formatted and merged version of the two csv documents that come from the openpowerlifting database
 # 
@@ -145,22 +147,78 @@ women<-open2 %>% #same for women
 ## Let's see how many leagues are represented and how frequently
 
 ```{r}
-table(open$Federation)
-ord<-order(as.matrix(table(open$Federation)),decreasing = TRUE)
-feds<-as.matrix(table(open$Federation))
+table(open2$Federation)
+ord<-order(as.matrix(table(open2$Federation)),decreasing = TRUE)
+feds<-as.matrix(table(open2$Federation))
 feds[ord,]
 ```
+That's pretty interesting, we have a good amount of federations. Now, openpowerlifting has included for us some fantastic data, so we can simply select drugtested vs. non-drug tested federation and compare the differences. Here I am making the big assumption: If the federation does not test for drugs, people likely take them; if federation tests for drugs, people likely don't. This is __absolutely__ an assumption. I will also only take federations that have >10000 entries as an arbitrary criterion. This will give the federation a bit of legitimacy, so that if they test, at least we know they have some structure to their testing.
 
-```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+```{r}
+selectfeds<-filter(as.data.frame(table(open2$Federation)),Freq>10000)
 
-men<-open2 %>%
+
+open2_10k<-open2 %>%
+  filter(Federation %in% selectfeds[,1])
+
+drug<-open2_10k %>% 
+  filter(Tested=="No")
+natty<-open2_10k %>% 
+  filter(Tested=="Yes")
+dim(natty)[[1]]/dim(drug)[[1]]
+```
+What is really interesting is that there are about 4.5x more people competing in drug tested leagues than in non-drug tested leagues! Let's look at a distribution of the number of events happening in the different equipment types.
+
+```{r}
+equipd<-as.data.frame(table(drug$Equipment))
+equipn<-as.data.frame(table(natty$Equipment))
+equipd<-equipd[-4,]
+equip<-cbind(equipd[,2],equipn[,2])
+colnames(equip)<-c("drug","natty")
+rownames(equip)<-equipd$Var1
+
+equip_norm<-as.data.frame(cbind(as.factor(equipd$Var1),equip[,1]/sum(equip[,1]),equip[,2]/sum(equip[,2])))
+equip_norm[,1]<-equipd$Var1
+colnames(equip_norm)<-c("equipment","drug","natty")
+
+equip2<-melt(equip_norm)
+
+ggplot(equip2,
+       aes(x=equipment,y=value,color=variable))+
+  geom_point(aes(cex=3))+
+  theme_classic()
+
+```
+So interestingly, the only category in which natty lifters are more abundant (and by far) is the single ply. These are corrected as proportions of total lifters that are in "natty" or "drug" leagues. I think it's about time to take a look at some weights. So I think the most informative category here would be to look at natty lifters. If you look proportionally, this is the moste equially distributed number, and also enough lifters to actually test some hypotheses.
+
+```{r}
+#men<-open2_10k %>%
   filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
   filter(!is.na(Age)) %>%
   filter(Sex=="M") %>%
-  filter(Federation==c("USAPL","USPA","IPF","IPL")) %>%
-  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation)
+  filter(Equipment=="Raw") %>% 
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested)
 
+raw<-open2_10k %>% 
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
+  filter(!is.na(Age)) %>%
+  filter(Equipment=="Raw") %>% 
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested,Sex)
 
+ggplot(raw,
+       aes(x=BodyweightKg,y=TotalKg,color=Tested))+
+  geom_point(cex=.1)+
+  facet_wrap(.~Sex)+
+  theme_classic()
+
+ggplot(raw,
+       aes(x=Group,y=TotalKg,fill=Tested))+
+  geom_violin(trim=TRUE,scale="width")+
+  facet_wrap(.~Sex)+
+  theme_classic()
+```
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 ggplot(men,
        aes(x=Federation,y=TotalKg,fill=Federation))+
   geom_violin(draw_quantiles = 0.5,trim=FALSE)
