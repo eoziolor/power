@@ -1,14 +1,10 @@
----
-title: "Power_3"
-author: "Elias"
-date: "May 21, 2018"
-output: html_document
----
-# ```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
-# library(RWordPress)
-# library(knitr)
-# #knit2wp("~/power/scripts/power_2/power_2.Rmd",title="Part I: Getting old? You can still lift!")
-# ```
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+library(devtools)
+library(RWordPress)
+library(knitr)
+#knit2wp("~/power/scripts/power_3/power_3.Rmd",title="Part II: How much stronger do steroids really make you?")
+```
+
 # __Powerful Data Project__ Part II: Drug testing
 
 There is a lot of fuss about steroids! Many are proponents of _using them right_ and many say that they can cause _roid rage_, which presents as agression, unpredictability and backne...almost like being really hungry teenager with a temper. But the question that a lot of lifters like me have asked themselves is:
@@ -17,9 +13,9 @@ _Is taking steroids worth it?_
 
 My opinion is that this is a very personal decision that anyone interested in strength or physique needs to make on their own. In the lifting world you will rarely find someone who hasn't had to make that decision at one point. Here's how I made mine:
 
-When I was a kid, just starting to lift more seriously to lose some weight. As many, I started with bodybuilding and managed to lose 100+ lbs. At one point I hit a wall. It had been about 2-3 years into lifting and I was getting pretty good results. However, I wasn't improving as quickly anymore. I went to the owner of my hometown gym, long time family friend and also a former professional bodybuilder (now IFBB judge) and asked him if I should try anabolic steroids. I won't give you too much detail, but he diswayed me from that idea rather quickly. He made his strongest argument with a question: "Will you ever make bodybuilding your career?". I knew I wasn't and that led me to think for a while about what steroids would do for me. For myself, the pros did not outweigh the cons, they didn't even come close. So I never tried and I don't think I ever will...unless they get legalized after the government finally allows scientists to analyze their effects on the human body.
+When I was a kid, just starting to lift more seriously to lose some weight. As many, I started with bodybuilding and managed to lose 100+ lbs. At one point I hit a wall. It had been about 2-3 years into lifting and I was getting pretty good results. However, I wasn't improving as quickly anymore. I went to the owner of my hometown gym, long time family friend and also a former professional bodybuilder (now IFBB judge) and asked him if I should try anabolic steroids. I won't give you too much detail, but he diswayed me from that idea rather quickly. He made his strongest argument with a question: "Will you ever make bodybuilding your career?". I knew I wasn't and that led me to think for a while about what steroids would do for me. For myself, the pros did not outweigh the cons, they didn't even come close. So I never tried and I don't think I will.
 
-_Shameless plug for science_: Restricting scientists from testing products that are used worldwide and impact many lives is a bit backwords Criminalizing steroid use is not stopping almost anybody from taking them and you will be surprised at the frequency of people, who don't necessarily look it like it, but still take steroids by the perscription of the local gym guru. Don't let Randy tell people what/how much/how often to take steroids...let scientists apply their methods and tell you what is "safe."
+_Shameless plug for science_: Restricting scientists from testing products that are used worldwide and impact many lives is a bit backwords. Criminalizing steroid use is not stopping almost anybody from taking them and you will be surprised at the frequency of people, who don't necessarily look it, but still take steroids by the perscription of the local gym guru. Don't let Randy tell people what/how much/how often to take steroids...let scientists apply their methods and tell you what is "safe."
 
 __MOVE IT ALONG, ELIAS__...I know. Let's get to the point of this article. Do steroids help you lift more weights??
 
@@ -54,7 +50,7 @@ library(class)
 
 ```
 
-Obviously this is a fantastic and well kept dataset! __Great job__ Sean Stangl of openpowerlifting.com!
+Obviously this is a fantastic and well kept dataset! __Great job__ Sean Stangl of openpowerlifting.com! At this point almost 656 000 entries.
 
 I want to draw your attention that there are so many columns in this dataset, each containing unique information about each lifter. This will give us a lot of power to draw some observations about patterns of skills and potentials of the lifters.
 
@@ -130,7 +126,7 @@ open2$Group<-factor(open2$Group,levels=unique(open2$Group)) #arranging the facto
 
 ## Let's see how many leagues are represented and how frequently
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 #table(open2$Federation)
 ord<-order(as.matrix(table(open2$Federation)),decreasing = TRUE)
 feds<-as.matrix(table(open2$Federation))
@@ -138,119 +134,126 @@ length(feds[ord,])
 ```
 That's pretty interesting, we have a good amount of federations (n=113). Now, openpowerlifting has included for us some fantastic data, so we can simply select drugtested vs. non-drug tested federation and compare the differences. I will first exclude any federation with less than 10 000 entries. I know this is a rather arbitrary number, but I want to only include data from fedrations that I know have good rule following in terms of accepted lifts and if they test, I want to know that the fedration does the testing properly. I can assume that those two criteria are more likely to be in fedrations that have large participation.
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 selectfeds<-filter(as.data.frame(table(open2$Federation)),Freq>10000)
 
 
 open2_10k<-open2 %>%
   filter(Federation %in% selectfeds[,1])
 
-drug<-open2_10k %>% 
+enhanced<-open2_10k %>% 
   filter(Tested=="No")
-natty<-open2_10k %>% 
+tested<-open2_10k %>% 
   filter(Tested=="Yes")
-dim(natty)[[1]]/dim(drug)[[1]]
+dim(tested)[[1]]/dim(enhanced)[[1]]
 ```
 
 __Wow__! What is really interesting is that there are about 4.5x more people competing in drug tested leagues than in non-drug tested leagues! Let's look at a distribution of the number of events happening in the different equipment types.
 
-```{r}
-equipd<-as.data.frame(table(drug$Equipment))
-equipn<-as.data.frame(table(natty$Equipment))
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+equipd<-as.data.frame(table(enhanced$Equipment))
+equipn<-as.data.frame(table(tested$Equipment))
 equipd<-equipd[-4,]
 equip<-cbind(equipd[,2],equipn[,2])
-colnames(equip)<-c("drug","natty")
+colnames(equip)<-c("enhanced","tested")
 rownames(equip)<-equipd$Var1
 
 equip_norm<-as.data.frame(cbind(as.factor(equipd$Var1),equip[,1]/sum(equip[,1]),equip[,2]/sum(equip[,2])))
 equip_norm[,1]<-equipd$Var1
-colnames(equip_norm)<-c("equipment","drug","natty")
+colnames(equip_norm)<-c("equipment","enhanced","tested")
 
 equip2<-melt(equip_norm)
 
+#jpeg(filename="~/power/data/power_3/1.jpg",width=800,height=600)
 ggplot(equip2,
        aes(x=equipment,y=value,color=variable))+
-  geom_point(aes(cex=3))+
-  theme_classic()
-
+  geom_point(cex=3)+
+  theme_classic()+
+  ggtitle("Proportion of lifters in each equipment category")+
+  labs(y="Proportion of lifters",x="Equipment type")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+#dev.off()
 ```
 Interestingly, the only category in which natty lifters are more abundant (and by far) is the single ply. These are corrected as proportions of total lifters that are in "natty" or "drug" leagues. I think it's about time to take a look at some weights.
 
 I think the most informative category here would be to look at raw lifters. If you look proportionally, this is the most equially distributed number, and also enough lifters to actually test some hypotheses.
 
-```{r}
-#men<-open2_10k %>%
-  # filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
-  # filter(!is.na(Age)) %>%
-  # filter(Sex=="M") %>%
-  # filter(Equipment=="Raw") %>% 
-  # select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested)
+Let's plot the means and ranges of these two categories by weight and maybe we can start looking for some differences.
 
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 raw<-open2_10k %>% 
   filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
   filter(!is.na(Age)) %>%
-  filter(Equipment=="Raw") %>% 
+  filter(Equipment=="Raw") %>%
   select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested,Sex)
 
-ggplot(raw,
-       aes(x=BodyweightKg,y=TotalKg,color=Tested))+
-  geom_point(cex=.1)+
-  facet_wrap(.~Sex)+
-  theme_classic()
-
-# ggplot(raw,
-#        aes(x=Group,y=TotalKg,fill=Tested))+
-#   geom_violin(trim=TRUE,scale="width")+
-#   facet_wrap(.~Sex)+
-#   theme_classic()
-```
-Hmm, there are no super-obvious differences that I can see here. Let's plot the means and ranges of these two categories by weight and maybe we can start seeing some differences.
-
-```{r}
 m_raw_quant<-raw %>%
   filter(Sex=="M") %>% 
   group_by(BodyweightKg,Tested) %>% 
-  summarize(low_total=quantile(TotalKg,0.05,na.rm=T),
+  summarize(low_total=quantile(TotalKg,0.01,na.rm=T),
             med_total=quantile(TotalKg,0.5,na.rm=T),
-            high_total=quantile(TotalKg,0.95,na.rm=T))
+            high_total=quantile(TotalKg,0.99,na.rm=T))
 
+jpeg(filename="~/power/data/power_3/2.top1per.jpg",width=800,height=600)
 ggplot(m_raw_quant %>% filter(BodyweightKg<160&BodyweightKg>50),
        aes(x=BodyweightKg,fill=Tested,color=Tested))+
   geom_ribbon(aes(ymin=low_total,ymax=high_total),alpha=.2,colour=NA)+
   geom_line(aes(y=med_total))+
   scale_fill_brewer(palette = "Set1") +
   scale_color_brewer(palette = "Set1")+
-  theme_classic()
-
+  theme_classic()+
+  ggtitle("Raw Males: Are enhanced lifters stronger?")+
+  labs(y="Total weight lifted (kg)",x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
 
-Well that is badass. I think we can clearly see some differences in here. Any red color above is lifters at that weight that are not drug tested, lifting more than tested lifters. Any time you see blue, tested lifters are lifting more than untested. At the top you have the top 5% of the distribution and at the bottom you have the bottom 5%. I've removed lifters under 50kg and above 160 because there is just not enough data to show any distribution.
+Well that is cool. I think we can clearly see some differences in here. Any red color above is lifters at that weight that are not drug tested, lifting more than tested lifters. Any time you see blue, tested lifters are lifting more than untested. At the top you have the top 5% of the distribution and at the bottom you have the bottom 5%. I've removed lifters under 50kg and above 160 because there is just not enough data to show any distribution.
 
 The good news here: the median doesn't seem to change. On average, tested and untested league lifters perform just about the same. At the high end, those top 5%, seem to perform a bit better. Is it worth it? How much better? Let's just take a look at women for a bit and we will come back to it.
 
-
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 f_raw_quant<-raw %>%
   filter(Sex=="F") %>% 
   group_by(BodyweightKg,Tested) %>% 
-  summarize(low_total=quantile(TotalKg,0.05,na.rm=T),
+  summarize(low_total=quantile(TotalKg,0.01,na.rm=T),
             med_total=quantile(TotalKg,0.5,na.rm=T),
-            high_total=quantile(TotalKg,0.95,na.rm=T))
+            high_total=quantile(TotalKg,0.99,na.rm=T))
 
+jpeg(filename="~/power/data/power_3/3.top1per.jpg",width=800,height=600)
 ggplot(f_raw_quant %>% filter(BodyweightKg<120&BodyweightKg>40),
        aes(x=BodyweightKg,fill=Tested,color=Tested))+
   geom_ribbon(aes(ymin=low_total,ymax=high_total),alpha=.2,colour=NA)+
   geom_line(aes(y=med_total))+
   scale_fill_brewer(palette = "Set1") +
   scale_color_brewer(palette = "Set1")+
-  theme_classic()
+  theme_classic()+
+  ggtitle("Raw Females: Are enhanced lifters stronger?")+
+  labs(y="Total weight lifted (kg)",x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
 
-I think with women we are stumbling upon a similar relationship, but not as pronounced as with men. Again, at the higher weights, tested lifters seem to perform better, but that could just be a factor of there being a lower number of representative lifters as well.
+I think with women we stumble upon a similar relationship, but not as pronounced as with men. Again, at the higher weights, tested lifters seem to perform better, but that could just be a factor of there being a lower number of representative lifters as well. Let's look more closely and quantify the differences.
 
-I think it's time to take a look at how pronounced of an effect this is.
+Here I am subtracting the weight lifted by the top 5% lifters from non-tested leagues at each weight from the one of the top 5% at the drug tested leagues. A higher number on the y axis (and a red area) means advantage for the non-drug tested federations, blue and lower than 0 on the y axis means better performance of drug tested athletes.
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 m_raw_drug<-m_raw_quant %>% 
   filter(Tested=="No")
 m_raw_natty<-m_raw_quant %>% 
@@ -261,44 +264,71 @@ male_diff<-m_join %>%
             mdiff=med_total.x-med_total.y,
             hdiff=high_total.x-high_total.y)
 
-
-ggplot(male_diff %>% filter(BodyweightKg<160&BodyweightKg>50),
-       aes(x=BodyweightKg))+
-  geom_line(aes(y=mdiff),col="green")+
-#  geom_line(aes(y=ldiff),col="red")+
-  geom_line(aes(y=hdiff),col="orange")+
-  theme_classic()
+# 
+# ggplot(male_diff %>% filter(BodyweightKg<160&BodyweightKg>50),
+#        aes(x=BodyweightKg))+
+#   geom_line(aes(y=mdiff),col="green")+
+# #  geom_line(aes(y=ldiff),col="red")+
+#   geom_line(aes(y=hdiff),col="orange")+
+#   theme_classic()
 
 interp <- approx(male_diff$BodyweightKg, male_diff$hdiff, n=10000)
 male_diff2 <- data.frame(BodyweightKg=interp$x, hdiff=interp$y)
 male_diff2$col[male_diff2$hdiff >= 0] <- "Not-tested"
 male_diff2$col[male_diff2$hdiff < 0] <- "Tested"
 
+jpeg(filename="~/power/data/power_3/4.top1per.jpg",width=800,height=600)
 ggplot(male_diff2 %>% filter(BodyweightKg<160&BodyweightKg>50),
        aes(x=BodyweightKg,y=hdiff))+
   geom_area(aes(fill=col))+
-  theme_classic()
-
+  theme_classic()+
+  ggtitle("Raw Males: In top 5% lifters, do steroids make a difference?")+
+  labs(y="Higher - enhanced lifters advantage; lower - natural lifter advantage (kg)",
+       x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
 
-```{r}
+We see an odd effect here. It is almost like the advantage is oscillating between untested and tested athletes. Here we are comparing the top 5% lifters in both categories. One correlate that this could be showing is the difference in weight categories. Two of the most prevelant tested federations are USAPL and IPF. The categories in those federations are different than those in USPA, WPF and the other bigger non-tested federations.
+
+The other side here is that the differences in favor of steroid using lifters seem to be a bigger peak than those of untested athletes. This is only present in the middle weight categories - between 90kg and 130kg.
+
+Let's look at median performance now, not just at the best of the best lifters.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 #Repeating for median
 interp <- approx(male_diff$BodyweightKg, male_diff$mdiff, n=10000)
 male_diff2 <- data.frame(BodyweightKg=interp$x, hdiff=interp$y)
 male_diff2$col[male_diff2$hdiff >= 0] <- "Not-tested"
 male_diff2$col[male_diff2$hdiff < 0] <- "Tested"
 
+jpeg(filename="~/power/data/power_3/5.jpg",width=800,height=600)
 ggplot(male_diff2 %>% filter(BodyweightKg<160&BodyweightKg>50),
        aes(x=BodyweightKg,y=hdiff))+
   geom_area(aes(fill=col))+
-  theme_classic()
-
+  theme_classic()+
+  ggtitle("Raw Males: In average lifters, do steroids make a difference?")+
+  labs(y="Higher - enhanced lifters advantage; lower - natural lifter advantage (kg)",
+       x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
 
+Very similar relationship here, but not as pronounced. Again we see slightly larger peaks in the advantage of non-tested lifters, but this time this seems very much like an oscillation back and forth based on weight class. No true relationship here.
 
-Females
+Let's see how this fairs in our female lifters.
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 f_raw_drug<-f_raw_quant %>% 
   filter(Tested=="No")
 f_raw_natty<-f_raw_quant %>% 
@@ -310,27 +340,39 @@ female_diff<-f_join %>%
             hdiff=high_total.x-high_total.y)
 
 
-ggplot(female_diff %>% filter(BodyweightKg<120&BodyweightKg>40),
-       aes(x=BodyweightKg))+
-  geom_line(aes(y=mdiff),col="green")+
-#  geom_line(aes(y=ldiff),col="red")+
-  geom_line(aes(y=hdiff),col="orange")+
-  theme_classic()
+# ggplot(female_diff %>% filter(BodyweightKg<120&BodyweightKg>40),
+#        aes(x=BodyweightKg))+
+#   geom_line(aes(y=mdiff),col="green")+
+# #  geom_line(aes(y=ldiff),col="red")+
+#   geom_line(aes(y=hdiff),col="orange")+
+#   theme_classic()
 
 interp <- approx(female_diff$BodyweightKg, female_diff$hdiff, n=10000)
 female_diff2 <- data.frame(BodyweightKg=interp$x, hdiff=interp$y)
 female_diff2$col[female_diff2$hdiff >= 0] <- "Not-tested"
 female_diff2$col[female_diff2$hdiff < 0] <- "Tested"
 
+jpeg(filename="~/power/data/power_3/6.top1per.jpg",width=800,height=600)
 ggplot(female_diff2 %>% filter(BodyweightKg<120&BodyweightKg>40),
        aes(x=BodyweightKg,y=hdiff))+
   geom_area(aes(fill=col))+
-  theme_classic()
+  theme_classic()+
+  ggtitle("Raw Feales: In top 5% lifters, do steroids make a difference?")+
+  labs(y="Higher - enhanced lifters advantage; lower - natural lifter advantage (kg)",
+       x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
+__WOW__! When looking at the highest 5% of lifters, the relationships are similar to men, but the advantage of raw lifters at the heavier categories is undoubted. In addition, the advantages of tested lifters seem actually higher here! That's really good for female lifters.
 
-Let's take a look around them all
+Now in the beginning I excluded all of the other equipment types, let's quickly plot them and see if there are any differences we can glean.
 
-```{r}
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 openall<-open2_10k %>% 
   filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
   filter(!is.na(Age)) %>%
@@ -343,6 +385,7 @@ m_quant<-openall %>%
             med_total=quantile(TotalKg,0.5,na.rm=T),
             high_total=quantile(TotalKg,0.95,na.rm=T))
 
+jpeg(filename="~/power/data/power_3/7.jpg",width=800,height=600)
 ggplot(m_quant %>% filter(BodyweightKg<160&BodyweightKg>50),
        aes(x=BodyweightKg,fill=Tested,color=Tested))+
   geom_ribbon(aes(ymin=low_total,ymax=high_total),alpha=.2,colour=NA)+
@@ -350,10 +393,23 @@ ggplot(m_quant %>% filter(BodyweightKg<160&BodyweightKg>50),
   scale_fill_brewer(palette = "Set1") +
   scale_color_brewer(palette = "Set1")+
   facet_wrap(.~Equipment)+
-  theme_classic()
+  theme_classic()+
+  ggtitle("Males: Are enhanced lifters stronger?")+
+  labs(y="Total weight lifted (kg)",
+       x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
+What we see here is sort of what I expected. For example: single ply category is dominated by tested athletes and overall they do better than untested ones. On the other hand, the opposite is the case for multi-ply and wraps. Thus, I think it was a good choice to use the __raw__ lifters to do these comparisons, as they are about equal proportion of the total tested and untested lifters.
 
-```{r}
+For women, these relationships are pretty similar. Again we see the need for data of multi-ply lifters, there's just not enough to create good distributions.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
 openall<-open2_10k %>% 
   filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
   filter(!is.na(Age)) %>%
@@ -366,6 +422,7 @@ f_quant<-openall %>%
             med_total=quantile(TotalKg,0.5,na.rm=T),
             high_total=quantile(TotalKg,0.95,na.rm=T))
 
+jpeg(filename="~/power/data/power_3/8.jpg",width=800,height=600)
 ggplot(f_quant %>% filter(BodyweightKg<120&BodyweightKg>40),
        aes(x=BodyweightKg,fill=Tested,color=Tested))+
   geom_ribbon(aes(ymin=low_total,ymax=high_total),alpha=.2,colour=NA)+
@@ -373,8 +430,99 @@ ggplot(f_quant %>% filter(BodyweightKg<120&BodyweightKg>40),
   scale_fill_brewer(palette = "Set1") +
   scale_color_brewer(palette = "Set1")+
   facet_wrap(.~Equipment)+
-  theme_classic()
+  theme_classic()+
+  ggtitle("Females: Are enhanced lifters stronger?")+
+  labs(y="Total weight lifted (kg)",
+       x="Bodyweight (kg)")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
 ```
+
+After a conversation with my friend Casan Scott (very bright guy who knows his way with data), I just wanted to take a second and show you what I'm taking about.
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+bodymen<-open2_10k %>% 
+  filter(Equipment=="Raw") %>% 
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
+  filter(!is.na(Age)) %>%
+  filter(Sex=="M") %>% 
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested,Sex,Equipment)
+
+jpeg(filename="~/power/data/power_3/9.jpg",width=800,height=600)
+ggplot(bodymen,
+       aes(x=Tested, y=BodyweightKg,fill=Tested,color=Tested))+
+  geom_violin(draw_quantiles = 0.5,trim=TRUE,alpha=.5,scale="width")+
+  theme_classic()+
+  ggtitle("Males: Weight class fitting")+
+  labs(y="Bodyweight (kg)",
+       x="Drug testing")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
+
+jpeg(filename="~/power/data/power_3/9.5.jpg",width=800,height=600)
+ggplot(bodymen,
+       aes(x=Tested, y=Wilks,fill=Tested,color=Tested))+
+  geom_violin(draw_quantiles = 0.5,trim=TRUE,alpha=.5,scale="width")+
+  theme_classic()+
+  ggtitle("Males: Is strenght affected by steroid use?")+
+  labs(y="Wilks",
+       x="Drug testing")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
+```
+You see here that there are more men at different weights in both leagues, which is why you get this oscillation where untested lifters are stronger at one bodyweight and tested lifters are stronger at another. It is mainly an artefact of the fact that weight classes in those leagues are different, so lifters try to fit into those weight classes. What you also notice is that untested lifters are on average larger than tested lifters. This is consistent with the thought that steroids allow you to retain muscle mass better.
+
+This is similar for women, but to a smaller extent:
+
+```{r, echo=FALSE, warning=FALSE, fig.align='center', message=FALSE}
+bodyfem<-open2_10k %>% 
+  filter(Equipment=="Raw") %>% 
+  filter(Best3BenchKg>0 & Best3DeadliftKg>0 & Best3SquatKg>0) %>%
+  filter(!is.na(Age)) %>%
+  filter(Sex=="F") %>% 
+  select(Equipment,Age,BodyweightKg,Best3SquatKg,Best3BenchKg,Best3DeadliftKg,TotalKg,Wilks,Group,Federation,Tested,Sex,Equipment)
+
+jpeg(filename="~/power/data/power_3/10.jpg",width=800,height=600)
+ggplot(bodyfem,
+       aes(x=Tested, y=BodyweightKg,fill=Tested,color=Tested))+
+  geom_violin(draw_quantiles = 0.5,trim=TRUE,alpha=.5,scale="width")+
+#  facet_wrap(.~Equipment)+
+  theme_classic()+
+  ggtitle("Females: Weight class fitting")+
+  labs(y="Bodyweight (kg)",
+       x="Drug testing")+
+  theme(axis.title=element_text(size=16),
+        axis.text=element_text(size=16),
+        plot.title=element_text(size=22),
+        legend.text = element_text(size=18),
+        legend.title=element_text(size=20),
+        legend.box.just="bottom")
+dev.off()
+```
+
+Steroids could allow you to retain more mass, sure. But overall this data doesn't support that they really make you any stronger per pound of weight.
+
+So what is the take-home here. Is it worth it to take steroids and receive better performance in powerlifting? I can't tell you that, but what I can tell you is that this data doesn't convince me as much as I would like. I am not saying that steroids don't work for aquiring strenght, it would be silly to say that. What I am saying is that they don't really help the avearage guy as much as one would think. Just look back at the median graph of whether on average drug tested vs. non-tested lifters do better. You see the oscillation that is mostly driven by weight class differences in the federations. Are the peaks associated with advantage of enhanced athletes higher? Maybe a bit, but the number is not huge! So __on average__ you can gain maybe 10-20kg on your total. Is that worth it?
+
+Let me make this clear. I pass no judgment of the decdisions here that people make. I am just driven by data and I want to know if the risk of taking a substance is worth the benefits...and how big those benefits would be. Overall, steroids should be tested, so that if people decide that they want to take the risk, both the benefits and the drawbacks of those enhancements can be detailed by scientists.
+
+Hope you enjoyed this little analysis. If you have suggestions for improvement or other questions you want answered, please write me an e-mail or tweet.
+
 
 <!-- Water cuts, not gonna work for now -->
 
